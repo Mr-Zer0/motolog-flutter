@@ -33,6 +33,14 @@ class ImageUploader extends StatelessWidget {
     );
   }
 
+  static Widget _buildImage(String path, {double? width, double? height}) {
+    const fit = BoxFit.cover;
+    if (path.startsWith('http')) {
+      return Image.network(path, width: width, height: height, fit: fit);
+    }
+    return Image.file(File(path), width: width, height: height, fit: fit);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -50,12 +58,7 @@ class ImageUploader extends StatelessWidget {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.file(
-                          File(e.value),
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                        ),
+                        child: _buildImage(e.value, width: 80, height: 80),
                       ),
                       Positioned(
                         top: 4,
@@ -119,10 +122,7 @@ class _FullscreenImage extends StatelessWidget {
         children: [
           Center(
             child: InteractiveViewer(
-              child: Image.file(
-                File(path),
-                fit: BoxFit.contain,
-              ),
+              child: ImageUploader._buildImage(path),
             ),
           ),
           Positioned(

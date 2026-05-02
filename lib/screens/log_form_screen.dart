@@ -70,30 +70,30 @@ class _LogFormScreenState extends State<LogFormScreen> {
     if (picked != null) setState(() => _date = picked);
   }
 
-  void _save(AppState state) {
+  Future<void> _save(AppState state) async {
+    setState(() => _saved = true);
     final odo = int.tryParse(_odoCtrl.text) ?? state.currentOdometer;
     final cost = double.tryParse(_costCtrl.text) ?? 0.0;
     final entry = LogEntry(
       id: widget.initial?.id ?? DateTime.now().millisecondsSinceEpoch,
+      firestoreId: widget.initial?.firestoreId,
       type: _type!,
       title: _titleCtrl.text.trim(),
       date: _date,
       odometer: odo,
       cost: cost,
       note: _noteCtrl.text.trim(),
-      images: _images,
+      images: const [],
     );
-    state.saveLog(entry);
-    setState(() => _saved = true);
-    Future.delayed(const Duration(milliseconds: 650), () {
-      if (mounted) Navigator.pop(context, entry);
-    });
+    await state.saveLog(entry, _images);
+    await Future.delayed(const Duration(milliseconds: 650));
+    if (mounted) Navigator.pop(context, entry);
   }
 
-  void _delete(AppState state) {
-    state.deleteLog(widget.initial!.id);
-    Navigator.pop(context);
-    Navigator.pop(context); // back past detail screen too
+  Future<void> _delete(AppState state) async {
+    await state.deleteLog(widget.initial!);
+    if (mounted) Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
   }
 
   @override

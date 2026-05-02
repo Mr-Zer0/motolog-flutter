@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +8,8 @@ import 'app_colors.dart';
 import 'app_state.dart';
 import 'firebase_options.dart';
 import 'screens/history_screen.dart';
+import 'screens/login_screen.dart';
+import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,7 +41,63 @@ class MotologApp extends StatelessWidget {
         scaffoldBackgroundColor: AppColors.bg,
         useMaterial3: true,
       ),
-      home: const HistoryScreen(),
+      home: const _AuthGate(),
     );
+  }
+}
+
+class _AuthGate extends StatefulWidget {
+  const _AuthGate();
+
+  @override
+  State<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<_AuthGate> {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: AuthService.userStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: AppColors.bg,
+            body: Center(child: CircularProgressIndicator(color: AppColors.accent)),
+          );
+        }
+
+        if (snapshot.data == null) {
+          // Signed out — clear state
+          context.read<AppState>().clear();
+          return const LoginScreen();
+        }
+
+        // Signed in — load data then show app
+        return _AppLoader(user: snapshot.data!);
+      },
+    );
+  }
+}
+
+class _AppLoader extends StatefulWidget {
+  final User user;
+  const _AppLoader({required this.user});
+
+  @override
+  State<_AppLoader> createState() => _AppLoaderState();
+}
+
+class _AppLoaderState extends State<_AppLoader> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppState>().load();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const HistoryScreen();
   }
 }

@@ -31,6 +31,7 @@ LogType logTypeById(String id) =>
 
 class LogEntry {
   final int id;
+  final String? firestoreId;
   final String type;
   final String title;
   final DateTime date;
@@ -41,6 +42,7 @@ class LogEntry {
 
   const LogEntry({
     required this.id,
+    this.firestoreId,
     required this.type,
     required this.title,
     required this.date,
@@ -52,6 +54,7 @@ class LogEntry {
 
   LogEntry copyWith({
     int? id,
+    String? firestoreId,
     String? type,
     String? title,
     DateTime? date,
@@ -62,6 +65,7 @@ class LogEntry {
   }) {
     return LogEntry(
       id: id ?? this.id,
+      firestoreId: firestoreId ?? this.firestoreId,
       type: type ?? this.type,
       title: title ?? this.title,
       date: date ?? this.date,

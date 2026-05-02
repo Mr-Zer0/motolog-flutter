@@ -1,24 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'models.dart';
+import 'services/auth_service.dart';
+import 'services/firestore_service.dart';
+import 'services/storage_service.dart';
 
 class AppState extends ChangeNotifier {
-  List<LogEntry> _logs = [
-    LogEntry(id: 1,  type: 'fuel',         title: 'Full tank',           date: DateTime(2026, 4, 20), odometer: 18420, cost: 18.60, note: '12.4L',                              images: []),
-    LogEntry(id: 2,  type: 'maintenance',  title: 'Oil & filter change', date: DateTime(2026, 4, 10), odometer: 18200, cost: 42.00, note: 'Motul 10W-40',                       images: []),
-    LogEntry(id: 3,  type: 'cleaning',     title: 'Full detail wash',    date: DateTime(2026, 4, 5),  odometer: 18100, cost: 12.00, note: '',                                   images: []),
-    LogEntry(id: 4,  type: 'fuel',         title: 'Full tank',           date: DateTime(2026, 3, 28), odometer: 17980, cost: 17.70, note: '11.8L',                              images: []),
-    LogEntry(id: 5,  type: 'inspection',   title: 'Pre-trip check',      date: DateTime(2026, 3, 15), odometer: 17800, cost: 0,     note: 'Chain, brakes, tire pressure',      images: []),
-    LogEntry(id: 6,  type: 'repair',       title: 'Front brake pads',    date: DateTime(2026, 3, 8),  odometer: 17750, cost: 38.00, note: 'Replaced worn front pads',          images: []),
-    LogEntry(id: 7,  type: 'fuel',         title: 'Full tank',           date: DateTime(2026, 3, 2),  odometer: 17600, cost: 19.65, note: '13.1L',                              images: []),
-    LogEntry(id: 8,  type: 'modification', title: 'Rear tire upgrade',   date: DateTime(2026, 2, 20), odometer: 17400, cost: 120.0, note: 'Michelin Pilot Street 2',           images: []),
-    LogEntry(id: 9,  type: 'fuel',         title: 'Full tank',           date: DateTime(2026, 2, 14), odometer: 17200, cost: 18.00, note: '12.0L',                              images: []),
-    LogEntry(id: 10, type: 'maintenance',  title: 'Annual service',      date: DateTime(2026, 2, 5),  odometer: 17100, cost: 65.00, note: 'Spark plug, air filter replaced',   images: []),
-  ];
-
-  Bike _bike = const Bike(name: 'Honda CB500F', year: '2021', plate: 'B 1234 XYZ', color: 'Matte Black');
+  List<LogEntry> _logs = [];
+  Bike _bike = const Bike(name: '', year: '', plate: '', color: '');
+  bool _loading = true;
 
   List<LogEntry> get logs => List.unmodifiable(_logs);
   Bike get bike => _bike;
+  bool get loading => _loading;
 
   int get currentOdometer => _logs.fold(0, (m, l) => l.odometer > m ? l.odometer : m);
   double get totalCost => _logs.fold(0.0, (s, l) => s + l.cost);
@@ -28,27 +21,69 @@ class AppState extends ChangeNotifier {
     return _logs.where((l) => l.type == typeFilter).toList();
   }
 
-  void saveLog(LogEntry log) {
+  Future<void> load() async {
+    _loading = true;
+    notifyListeners();
+
+    final results = await Future.wait([
+      FirestoreService.fetchBike(),
+      FirestoreService.fetchLogs(AuthService.uid!),
+    ]);
+
+    _bike = (results[0] as Bike?) ??
+        const Bike(name: 'My Bike', year: '', plate: '', color: '');
+    _logs = results[1] as List<LogEntry>;
+    _loading = false;
+    notifyListeners();
+  }
+
+  void clear() {
+    _logs = [];
+    _bike = const Bike(name: '', year: '', plate: '', color: '');
+    _loading = true;
+    notifyListeners();
+  }
+
+  Future<void> saveLog(LogEntry log, List<String> localImages) async {
+    final uid = AuthService.uid!;
+
+    // Determine Firestore doc ID (new or existing)
+    final docId = log.firestoreId ?? FirestoreService.newLogRef(uid).id;
+
+    // Upload any new local images, get back URLs
+    final uploadedImages = await StorageService.uploadPending(uid, docId, localImages);
+    final saved = log.copyWith(firestoreId: docId, images: uploadedImages);
+
+    // Optimistic update
     final idx = _logs.indexWhere((l) => l.id == log.id);
     if (idx >= 0) {
-      final updated = List<LogEntry>.from(_logs);
-      updated[idx] = log;
-      _logs = updated;
+      _logs = List.from(_logs)..[idx] = saved;
     } else {
-      _logs = [log, ..._logs];
+      _logs = [saved, ..._logs];
+      _logs.sort((a, b) => b.date.compareTo(a.date));
     }
-    _logs.sort((a, b) => b.date.compareTo(a.date));
     notifyListeners();
+
+    await FirestoreService.saveLog(uid, docId, saved);
   }
 
-  void deleteLog(int id) {
-    _logs = _logs.where((l) => l.id != id).toList();
+  Future<void> deleteLog(LogEntry log) async {
+    final uid = AuthService.uid!;
+    _logs = _logs.where((l) => l.id != log.id).toList();
     notifyListeners();
+
+    if (log.firestoreId != null) {
+      await FirestoreService.deleteLog(uid, log.firestoreId!);
+      for (final img in log.images) {
+        if (StorageService.isRemote(img)) StorageService.deleteImage(img);
+      }
+    }
   }
 
-  void updateBike(Bike bike) {
+  Future<void> updateBike(Bike bike) async {
     _bike = bike;
     notifyListeners();
+    await FirestoreService.saveBike(bike);
   }
 
   String buildCsv() {
@@ -56,8 +91,8 @@ class AppState extends ChangeNotifier {
     for (final l in _logs) {
       final t = logTypeById(l.type).label;
       final note = l.note.replaceAll(',', ';').replaceAll('\n', ' ');
-      final dateStr = '${l.date.year}-${l.date.month.toString().padLeft(2,'0')}-${l.date.day.toString().padLeft(2,'0')}';
-      rows.add('$dateStr,$t,${l.odometer},${l.cost.toStringAsFixed(2)},"$note"');
+      final d = '${l.date.year}-${l.date.month.toString().padLeft(2, '0')}-${l.date.day.toString().padLeft(2, '0')}';
+      rows.add('$d,$t,${l.odometer},${l.cost.toStringAsFixed(2)},"$note"');
     }
     return rows.join('\n');
   }

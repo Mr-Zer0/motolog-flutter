@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../app_colors.dart';
 import '../app_state.dart';
 import '../models.dart';
+import '../services/auth_service.dart';
 import '../widgets/log_card.dart';
 import 'log_detail_screen.dart';
 import 'log_form_screen.dart';
@@ -106,7 +107,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
         return Scaffold(
           backgroundColor: AppColors.bg,
-          body: SafeArea(
+          body: state.loading
+              ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
+              : SafeArea(
             child: Stack(
               children: [
                 CustomScrollView(
@@ -148,6 +151,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                     _iconBtn(Icons.edit_outlined, () {
                                       Navigator.push(context, _slideRoute(BikeScreen(bike: state.bike)));
                                     }),
+                                    const SizedBox(width: 8),
+                                    _iconBtn(Icons.logout, () => AuthService.signOut()),
                                   ],
                                 ),
                               ],

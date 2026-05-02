@@ -143,8 +143,9 @@ class _LogDetailScreenState extends State<LogDetailScreen> {
                       runSpacing: 10,
                       children: _log.images.map((path) => ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: Image.file(File(path),
-                                width: 100, height: 100, fit: BoxFit.cover),
+                            child: path.startsWith('http')
+                                ? Image.network(path, width: 100, height: 100, fit: BoxFit.cover)
+                                : Image.file(File(path), width: 100, height: 100, fit: BoxFit.cover),
                           )).toList(),
                     ),
                   ],
