@@ -4,20 +4,25 @@ import '../models.dart';
 class FirestoreService {
   static final _db = FirebaseFirestore.instance;
 
-  // ── Bike ── /bike/default
+  // ── Bike ── bike/default
   static Future<Bike?> fetchBike() async {
     final doc = await _db.doc('bike/default').get();
     if (!doc.exists) return null;
     final d = doc.data()!;
     return Bike(
-      name: d['name'] ?? '',
-      year: d['year'] ?? '',
-      plate: d['plate'] ?? '',
-      color: d['color'] ?? '',
-      vin: d['vin'] ?? '',
-      engineType: d['engineType'] ?? '',
-      buyingDate: d['buyingDate'] != null
-          ? (d['buyingDate'] as Timestamp).toDate()
+      name: (d['name'] ?? '').toString(),
+      brand: (d['brand'] ?? '').toString(),
+      model: (d['model'] ?? '').toString(),
+      year: d['year'] != null ? d['year'].toString() : '',
+      color: (d['color'] ?? '').toString(),
+      engineType: (d['engine_type'] ?? '').toString(),
+      plate: (d['plate_number'] ?? '').toString(),
+      vin: (d['vin'] ?? '').toString(),
+      currentOdometer: d['current_odometer'] != null
+          ? (d['current_odometer'] as num).toInt()
+          : null,
+      buyingDate: d['buying_date'] != null
+          ? DateTime.tryParse(d['buying_date'].toString())
           : null,
     );
   }
@@ -25,26 +30,28 @@ class FirestoreService {
   static Future<void> saveBike(Bike bike) async {
     await _db.doc('bike/default').set({
       'name': bike.name,
-      'year': bike.year,
-      'plate': bike.plate,
+      'brand': bike.brand,
+      'model': bike.model,
+      'year': bike.year.isNotEmpty ? int.tryParse(bike.year) : null,
       'color': bike.color,
+      'engine_type': bike.engineType.isNotEmpty ? bike.engineType : null,
+      'plate_number': bike.plate,
       'vin': bike.vin,
-      'engineType': bike.engineType,
-      'buyingDate': bike.buyingDate != null
-          ? Timestamp.fromDate(bike.buyingDate!)
+      'current_odometer': bike.currentOdometer,
+      'buying_date': bike.buyingDate != null
+          ? '${bike.buyingDate!.year}-${bike.buyingDate!.month.toString().padLeft(2, '0')}-${bike.buyingDate!.day.toString().padLeft(2, '0')}'
           : null,
     }, SetOptions(merge: true));
   }
 
-  // ── Log Entries ── /logEntries/{uid}/entries/{logId}
-  static CollectionReference<Map<String, dynamic>> _logsRef(String uid) =>
-      _db.collection('logEntries').doc(uid).collection('entries');
+  // ── Log Entries ── logEntries/{auto-id}
+  static CollectionReference<Map<String, dynamic>> get _logsRef =>
+      _db.collection('logEntries');
 
-  static DocumentReference<Map<String, dynamic>> newLogRef(String uid) =>
-      _logsRef(uid).doc();
+  static DocumentReference<Map<String, dynamic>> get newLogRef => _logsRef.doc();
 
-  static Future<List<LogEntry>> fetchLogs(String uid) async {
-    final snap = await _logsRef(uid).orderBy('date', descending: true).get();
+  static Future<List<LogEntry>> fetchLogs() async {
+    final snap = await _logsRef.orderBy('date', descending: true).get();
     return snap.docs.map(_docToLog).toList();
   }
 
@@ -53,30 +60,35 @@ class FirestoreService {
     return LogEntry(
       id: doc.id.hashCode,
       firestoreId: doc.id,
-      type: d['type'] ?? 'other',
-      title: d['title'] ?? '',
-      date: (d['date'] as Timestamp).toDate(),
-      odometer: (d['odometer'] ?? 0) as int,
-      cost: (d['cost'] ?? 0).toDouble(),
-      note: d['note'] ?? '',
-      images: List<String>.from(d['images'] ?? []),
+      type: (d['type'] ?? 'other').toString(),
+      title: (d['title'] ?? '').toString(),
+      date: DateTime.tryParse((d['date'] ?? '').toString()) ?? DateTime.now(),
+      odometer: d['odometer'] != null ? (d['odometer'] as num).toInt() : 0,
+      cost: d['cost'] != null ? (d['cost'] as num).toDouble() : 0.0,
+      description: (d['description'] ?? '').toString(),
+      attachmentUrl: d['attachment_url'] as String?,
     );
   }
 
-  static Future<void> saveLog(
-      String uid, String docId, LogEntry log) async {
-    await _logsRef(uid).doc(docId).set({
+  static Future<void> saveLog(String docId, LogEntry log, {required bool isNew}) async {
+    final data = <String, dynamic>{
       'type': log.type,
       'title': log.title,
-      'date': Timestamp.fromDate(log.date),
-      'odometer': log.odometer,
-      'cost': log.cost,
-      'note': log.note,
-      'images': log.images,
-    });
+      'date': '${log.date.year}-${log.date.month.toString().padLeft(2, '0')}-${log.date.day.toString().padLeft(2, '0')}',
+      'odometer': log.odometer > 0 ? log.odometer : null,
+      'cost': log.cost > 0 ? log.cost : null,
+      'description': log.description.isNotEmpty ? log.description : null,
+      'attachment_url': log.attachmentUrl,
+    };
+    if (isNew) {
+      data['created_at'] = DateTime.now().toUtc().toIso8601String();
+      await _logsRef.doc(docId).set(data);
+    } else {
+      await _logsRef.doc(docId).set(data, SetOptions(merge: true));
+    }
   }
 
-  static Future<void> deleteLog(String uid, String firestoreId) async {
-    await _logsRef(uid).doc(firestoreId).delete();
+  static Future<void> deleteLog(String firestoreId) async {
+    await _logsRef.doc(firestoreId).delete();
   }
 }

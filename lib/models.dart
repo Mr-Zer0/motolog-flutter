@@ -37,8 +37,8 @@ class LogEntry {
   final DateTime date;
   final int odometer;
   final double cost;
-  final String note;
-  final List<String> images;
+  final String description;
+  final String? attachmentUrl;
 
   const LogEntry({
     required this.id,
@@ -48,8 +48,8 @@ class LogEntry {
     required this.date,
     required this.odometer,
     required this.cost,
-    required this.note,
-    required this.images,
+    this.description = '',
+    this.attachmentUrl,
   });
 
   LogEntry copyWith({
@@ -60,8 +60,9 @@ class LogEntry {
     DateTime? date,
     int? odometer,
     double? cost,
-    String? note,
-    List<String>? images,
+    String? description,
+    String? attachmentUrl,
+    bool clearAttachmentUrl = false,
   }) {
     return LogEntry(
       id: id ?? this.id,
@@ -71,33 +72,41 @@ class LogEntry {
       date: date ?? this.date,
       odometer: odometer ?? this.odometer,
       cost: cost ?? this.cost,
-      note: note ?? this.note,
-      images: images ?? this.images,
+      description: description ?? this.description,
+      attachmentUrl: clearAttachmentUrl ? null : (attachmentUrl ?? this.attachmentUrl),
     );
   }
 }
 
 class Bike {
   final String name;
+  final String brand;
+  final String model;
   final String year;
   final String plate;
   final String color;
   final String vin;
   final DateTime? buyingDate;
   final String engineType;
+  final int? currentOdometer;
 
   const Bike({
     required this.name,
+    this.brand = '',
+    this.model = '',
     required this.year,
     required this.plate,
     required this.color,
     this.vin = '',
     this.buyingDate,
     this.engineType = '',
+    this.currentOdometer,
   });
 
   Bike copyWith({
     String? name,
+    String? brand,
+    String? model,
     String? year,
     String? plate,
     String? color,
@@ -105,15 +114,20 @@ class Bike {
     DateTime? buyingDate,
     bool clearBuyingDate = false,
     String? engineType,
+    int? currentOdometer,
+    bool clearCurrentOdometer = false,
   }) {
     return Bike(
       name: name ?? this.name,
+      brand: brand ?? this.brand,
+      model: model ?? this.model,
       year: year ?? this.year,
       plate: plate ?? this.plate,
       color: color ?? this.color,
       vin: vin ?? this.vin,
       buyingDate: clearBuyingDate ? null : (buyingDate ?? this.buyingDate),
       engineType: engineType ?? this.engineType,
+      currentOdometer: clearCurrentOdometer ? null : (currentOdometer ?? this.currentOdometer),
     );
   }
 }

@@ -23,6 +23,14 @@ class _LogDetailScreenState extends State<LogDetailScreen> {
     _log = widget.log;
   }
 
+  Widget _buildImage(String path, {double? width, double? height}) {
+    const fit = BoxFit.cover;
+    if (path.startsWith('http')) {
+      return Image.network(path, width: width, height: height, fit: fit);
+    }
+    return Image.file(File(path), width: width, height: height, fit: fit);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = logTypeById(_log.type);
@@ -127,26 +135,22 @@ class _LogDetailScreenState extends State<LogDetailScreen> {
 
                   // Fields
                   _detailRow('Odometer', '${NumberFormat('#,###').format(_log.odometer)} km'),
-                  _detailRow('Cost', _log.cost > 0 ? '\$${_log.cost.toStringAsFixed(2)}' : '—'),
-                  _detailRow('Notes', _log.note.isNotEmpty ? _log.note : '—', lastBorder: _log.images.isEmpty),
+                  _detailRow('Cost', _log.cost > 0 ? '฿${_log.cost.toStringAsFixed(2)}' : '—'),
+                  _detailRow('Description',
+                      _log.description.isNotEmpty ? _log.description : '—',
+                      lastBorder: _log.attachmentUrl == null),
 
-                  // Photos
-                  if (_log.images.isNotEmpty) ...[
+                  // Photo
+                  if (_log.attachmentUrl != null) ...[
                     const SizedBox(height: 20),
-                    Text('PHOTOS',
+                    Text('PHOTO',
                         style: GoogleFonts.outfit(
                             fontSize: 11, fontWeight: FontWeight.w700,
                             color: AppColors.muted, letterSpacing: 0.9)),
                     const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: _log.images.map((path) => ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: path.startsWith('http')
-                                ? Image.network(path, width: 100, height: 100, fit: BoxFit.cover)
-                                : Image.file(File(path), width: 100, height: 100, fit: BoxFit.cover),
-                          )).toList(),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: _buildImage(_log.attachmentUrl!, width: double.infinity, height: 200),
                     ),
                   ],
                 ],

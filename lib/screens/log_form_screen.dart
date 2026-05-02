@@ -25,8 +25,8 @@ class _LogFormScreenState extends State<LogFormScreen> {
   late DateTime _date;
   late TextEditingController _odoCtrl;
   late TextEditingController _costCtrl;
-  late TextEditingController _noteCtrl;
-  late List<String> _images;
+  late TextEditingController _descCtrl;
+  late String? _attachment;
   bool _saved = false;
   bool _confirmDelete = false;
 
@@ -36,13 +36,13 @@ class _LogFormScreenState extends State<LogFormScreen> {
   void initState() {
     super.initState();
     final i = widget.initial;
-    _type     = i?.type;
-    _titleCtrl = TextEditingController(text: i?.title ?? '');
-    _date     = i?.date ?? DateTime.now();
-    _odoCtrl  = TextEditingController(text: i != null ? '${i.odometer}' : '');
-    _costCtrl = TextEditingController(text: i != null && i.cost > 0 ? i.cost.toStringAsFixed(2) : '');
-    _noteCtrl = TextEditingController(text: i?.note ?? '');
-    _images   = List.from(i?.images ?? []);
+    _type       = i?.type;
+    _titleCtrl  = TextEditingController(text: i?.title ?? '');
+    _date       = i?.date ?? DateTime.now();
+    _odoCtrl    = TextEditingController(text: i != null && i.odometer > 0 ? '${i.odometer}' : '');
+    _costCtrl   = TextEditingController(text: i != null && i.cost > 0 ? i.cost.toStringAsFixed(2) : '');
+    _descCtrl   = TextEditingController(text: i?.description ?? '');
+    _attachment = i?.attachmentUrl;
   }
 
   @override
@@ -50,7 +50,7 @@ class _LogFormScreenState extends State<LogFormScreen> {
     _titleCtrl.dispose();
     _odoCtrl.dispose();
     _costCtrl.dispose();
-    _noteCtrl.dispose();
+    _descCtrl.dispose();
     super.dispose();
   }
 
@@ -82,10 +82,9 @@ class _LogFormScreenState extends State<LogFormScreen> {
       date: _date,
       odometer: odo,
       cost: cost,
-      note: _noteCtrl.text.trim(),
-      images: const [],
+      description: _descCtrl.text.trim(),
     );
-    await state.saveLog(entry, _images);
+    await state.saveLog(entry, _attachment);
     await Future.delayed(const Duration(milliseconds: 650));
     if (mounted) Navigator.pop(context, entry);
   }
@@ -164,7 +163,6 @@ class _LogFormScreenState extends State<LogFormScreen> {
                       child: ListView(
                         padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
                         children: [
-                          // Type grid
                           AppField(
                             label: 'Log Type',
                             child: LogTypeGrid(
@@ -208,7 +206,7 @@ class _LogFormScreenState extends State<LogFormScreen> {
                           ),
 
                           AppField(
-                            label: 'Cost — optional',
+                            label: 'Cost (฿) — optional',
                             child: AppInput(
                               controller: _costCtrl,
                               placeholder: '0.00',
@@ -217,19 +215,19 @@ class _LogFormScreenState extends State<LogFormScreen> {
                           ),
 
                           AppField(
-                            label: 'Notes — optional',
+                            label: 'Description — optional',
                             child: AppInput(
-                              controller: _noteCtrl,
+                              controller: _descCtrl,
                               placeholder: 'Add details…',
                               maxLines: 3,
                             ),
                           ),
 
                           AppField(
-                            label: 'Photos — optional',
+                            label: 'Photo — optional',
                             child: ImageUploader(
-                              images: _images,
-                              onChange: (imgs) => setState(() => _images = imgs),
+                              attachment: _attachment,
+                              onChange: (path) => setState(() => _attachment = path),
                             ),
                           ),
 

@@ -19,34 +19,45 @@ class BikeScreen extends StatefulWidget {
 
 class _BikeScreenState extends State<BikeScreen> {
   late TextEditingController _nameCtrl;
+  late TextEditingController _brandCtrl;
+  late TextEditingController _modelCtrl;
   late TextEditingController _yearCtrl;
   late TextEditingController _plateCtrl;
   late TextEditingController _colorCtrl;
   late TextEditingController _vinCtrl;
-  late TextEditingController _engineCtrl;
+  late TextEditingController _currentOdoCtrl;
+  late String _engineType;
   DateTime? _buyingDate;
   bool _saved = false;
+
+  static const _engineTypes = ['ICE', 'EV', 'Hybrid'];
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl   = TextEditingController(text: widget.bike.name);
-    _yearCtrl   = TextEditingController(text: widget.bike.year);
-    _plateCtrl  = TextEditingController(text: widget.bike.plate);
-    _colorCtrl  = TextEditingController(text: widget.bike.color);
-    _vinCtrl    = TextEditingController(text: widget.bike.vin);
-    _engineCtrl = TextEditingController(text: widget.bike.engineType);
-    _buyingDate = widget.bike.buyingDate;
+    _nameCtrl       = TextEditingController(text: widget.bike.name);
+    _brandCtrl      = TextEditingController(text: widget.bike.brand);
+    _modelCtrl      = TextEditingController(text: widget.bike.model);
+    _yearCtrl       = TextEditingController(text: widget.bike.year);
+    _plateCtrl      = TextEditingController(text: widget.bike.plate);
+    _colorCtrl      = TextEditingController(text: widget.bike.color);
+    _vinCtrl        = TextEditingController(text: widget.bike.vin);
+    _currentOdoCtrl = TextEditingController(
+        text: widget.bike.currentOdometer != null ? '${widget.bike.currentOdometer}' : '');
+    _engineType  = widget.bike.engineType;
+    _buyingDate  = widget.bike.buyingDate;
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _brandCtrl.dispose();
+    _modelCtrl.dispose();
     _yearCtrl.dispose();
     _plateCtrl.dispose();
     _colorCtrl.dispose();
     _vinCtrl.dispose();
-    _engineCtrl.dispose();
+    _currentOdoCtrl.dispose();
     super.dispose();
   }
 
@@ -69,12 +80,15 @@ class _BikeScreenState extends State<BikeScreen> {
   void _save(AppState state) {
     state.updateBike(Bike(
       name: _nameCtrl.text.trim(),
+      brand: _brandCtrl.text.trim(),
+      model: _modelCtrl.text.trim(),
       year: _yearCtrl.text.trim(),
       plate: _plateCtrl.text.trim(),
       color: _colorCtrl.text.trim(),
       vin: _vinCtrl.text.trim(),
       buyingDate: _buyingDate,
-      engineType: _engineCtrl.text.trim(),
+      engineType: _engineType,
+      currentOdometer: int.tryParse(_currentOdoCtrl.text),
     ));
     setState(() => _saved = true);
     Future.delayed(const Duration(milliseconds: 650), () {
@@ -144,8 +158,16 @@ class _BikeScreenState extends State<BikeScreen> {
                       ),
 
                       AppField(
-                        label: 'Bike Name / Model',
-                        child: AppInput(controller: _nameCtrl, placeholder: 'e.g. Honda CB500F'),
+                        label: 'Bike Name',
+                        child: AppInput(controller: _nameCtrl, placeholder: 'e.g. My Honda'),
+                      ),
+                      AppField(
+                        label: 'Brand',
+                        child: AppInput(controller: _brandCtrl, placeholder: 'e.g. Honda'),
+                      ),
+                      AppField(
+                        label: 'Model',
+                        child: AppInput(controller: _modelCtrl, placeholder: 'e.g. CB500F'),
                       ),
                       AppField(
                         label: 'Year',
@@ -153,7 +175,7 @@ class _BikeScreenState extends State<BikeScreen> {
                       ),
                       AppField(
                         label: 'Plate Number',
-                        child: AppInput(controller: _plateCtrl, placeholder: 'e.g. B 1234 XYZ'),
+                        child: AppInput(controller: _plateCtrl, placeholder: 'e.g. กข 1234'),
                       ),
                       AppField(
                         label: 'Color',
@@ -164,8 +186,46 @@ class _BikeScreenState extends State<BikeScreen> {
                         child: AppInput(controller: _vinCtrl, placeholder: 'e.g. 1HGBH41JXMN109186'),
                       ),
                       AppField(
+                        label: 'Current Odometer (km)',
+                        child: AppInput(
+                          controller: _currentOdoCtrl,
+                          placeholder: '0',
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      AppField(
                         label: 'Engine Type',
-                        child: AppInput(controller: _engineCtrl, placeholder: 'e.g. 471cc Parallel Twin'),
+                        child: Row(
+                          children: _engineTypes.map((type) {
+                            final selected = _engineType == type;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: GestureDetector(
+                                onTap: () => setState(() => _engineType = type),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                                  decoration: BoxDecoration(
+                                    color: selected ? AppColors.accentBg : AppColors.surface,
+                                    border: Border.all(
+                                      color: selected ? AppColors.accent : AppColors.border,
+                                      width: 1.5,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    type,
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: selected ? AppColors.accentText : AppColors.muted,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
                       AppField(
                         label: 'Buying Date',

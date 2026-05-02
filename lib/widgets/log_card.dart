@@ -55,7 +55,7 @@ class LogCard extends StatelessWidget {
                       ),
                       if (log.cost > 0)
                         Text(
-                          '\$${log.cost.toStringAsFixed(2)}',
+                          '฿${log.cost.toStringAsFixed(2)}',
                           style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.muted),
                         ),
                     ],
@@ -69,17 +69,17 @@ class LogCard extends StatelessWidget {
                       _dot(),
                       Text('${NumberFormat('#,###').format(log.odometer)} km',
                           style: GoogleFonts.outfit(fontSize: 12, color: AppColors.muted)),
-                      if (log.images.isNotEmpty) ...[
+                      if (log.attachmentUrl != null) ...[
                         _dot(),
                         Icon(Icons.image_outlined, size: 12, color: AppColors.subtle),
                       ],
                     ],
                   ),
-                  if (log.note.isNotEmpty)
+                  if (log.description.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
-                        log.note,
+                        log.description,
                         style: GoogleFonts.outfit(fontSize: 12, color: AppColors.muted),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

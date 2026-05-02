@@ -5,23 +5,18 @@ import 'package:image_picker/image_picker.dart';
 import '../app_colors.dart';
 
 class ImageUploader extends StatelessWidget {
-  final List<String> images;
-  final ValueChanged<List<String>> onChange;
+  final String? attachment;
+  final ValueChanged<String?> onChange;
 
-  const ImageUploader({super.key, required this.images, required this.onChange});
+  const ImageUploader({super.key, required this.attachment, required this.onChange});
 
   Future<void> _pick() async {
     final picker = ImagePicker();
-    final picked = await picker.pickMultiImage();
-    if (picked.isNotEmpty) {
-      onChange([...images, ...picked.map((x) => x.path)]);
-    }
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) onChange(picked.path);
   }
 
-  void _remove(int idx) {
-    final updated = List<String>.from(images)..removeAt(idx);
-    onChange(updated);
-  }
+  void _remove() => onChange(null);
 
   void _view(BuildContext context, String path) {
     Navigator.push(
@@ -44,42 +39,37 @@ class ImageUploader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (images.isNotEmpty)
+        if (attachment != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: images.asMap().entries.map((e) {
-                return GestureDetector(
-                  onTap: () => _view(context, e.value),
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: _buildImage(e.value, width: 80, height: 80),
-                      ),
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: GestureDetector(
-                          onTap: () => _remove(e.key),
-                          child: Container(
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              color: Colors.black.withAlpha(140),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Icon(Icons.close, size: 12, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ],
+            child: GestureDetector(
+              onTap: () => _view(context, attachment!),
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: _buildImage(attachment!, width: 80, height: 80),
                   ),
-                );
-              }).toList(),
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: GestureDetector(
+                      onTap: _remove,
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(140),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(Icons.close, size: 12, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         GestureDetector(
@@ -89,7 +79,7 @@ class ImageUploader extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 13),
             decoration: BoxDecoration(
               color: AppColors.bg,
-              border: Border.all(color: AppColors.border, width: 1.5, style: BorderStyle.solid),
+              border: Border.all(color: AppColors.border, width: 1.5),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -98,7 +88,7 @@ class ImageUploader extends StatelessWidget {
                 Icon(Icons.image_outlined, size: 18, color: AppColors.subtle),
                 const SizedBox(width: 8),
                 Text(
-                  'Add Photo',
+                  attachment != null ? 'Change Photo' : 'Add Photo',
                   style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.muted),
                 ),
               ],

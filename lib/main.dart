@@ -9,7 +9,6 @@ import 'app_state.dart';
 import 'firebase_options.dart';
 import 'screens/history_screen.dart';
 import 'screens/login_screen.dart';
-import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,28 +53,27 @@ class _AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<_AuthGate> {
+  // Use currentUser synchronously for the initial state — avoids waiting on
+  // the Pigeon auth-state channel before showing anything.
+  bool _signedIn = FirebaseAuth.instance.currentUser != null;
+
+  @override
+  void initState() {
+    super.initState();
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (mounted) setState(() => _signedIn = user != null);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: AuthService.userStream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            backgroundColor: AppColors.bg,
-            body: Center(child: CircularProgressIndicator(color: AppColors.accent)),
-          );
-        }
-
-        if (snapshot.data == null) {
-          // Signed out — clear state
-          context.read<AppState>().clear();
-          return const LoginScreen();
-        }
-
-        // Signed in — load data then show app
-        return _AppLoader(user: snapshot.data!);
-      },
-    );
+    if (!_signedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<AppState>().clear();
+      });
+      return const LoginScreen();
+    }
+    return _AppLoader(user: FirebaseAuth.instance.currentUser!);
   }
 }
 

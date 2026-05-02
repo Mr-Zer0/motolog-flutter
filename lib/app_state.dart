@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'models.dart';
-import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
 import 'services/storage_service.dart';
 
@@ -13,7 +12,7 @@ class AppState extends ChangeNotifier {
   Bike get bike => _bike;
   bool get loading => _loading;
 
-  int get currentOdometer => _logs.fold(0, (m, l) => l.odometer > m ? l.odometer : m);
+  int get currentOdometer => _bike.currentOdometer ?? 0;
   double get totalCost => _logs.fold(0.0, (s, l) => s + l.cost);
 
   List<LogEntry> filteredLogs(String? typeFilter) {
@@ -27,7 +26,7 @@ class AppState extends ChangeNotifier {
 
     final results = await Future.wait([
       FirestoreService.fetchBike(),
-      FirestoreService.fetchLogs(AuthService.uid!),
+      FirestoreService.fetchLogs(),
     ]);
 
     _bike = (results[0] as Bike?) ??
@@ -44,17 +43,26 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveLog(LogEntry log, List<String> localImages) async {
-    final uid = AuthService.uid!;
+  // attachmentPending: local file path to upload, remote URL to keep, or null for no attachment
+  Future<void> saveLog(LogEntry log, String? attachmentPending) async {
+    final docId = log.firestoreId ?? FirestoreService.newLogRef.id;
+    final isNew = log.firestoreId == null;
 
-    // Determine Firestore doc ID (new or existing)
-    final docId = log.firestoreId ?? FirestoreService.newLogRef(uid).id;
+    String? finalUrl;
+    if (attachmentPending != null) {
+      if (StorageService.isRemote(attachmentPending)) {
+        finalUrl = attachmentPending;
+      } else {
+        finalUrl = await StorageService.uploadAttachment(attachmentPending);
+      }
+    }
 
-    // Upload any new local images, get back URLs
-    final uploadedImages = await StorageService.uploadPending(uid, docId, localImages);
-    final saved = log.copyWith(firestoreId: docId, images: uploadedImages);
+    final saved = log.copyWith(
+      firestoreId: docId,
+      attachmentUrl: finalUrl,
+      clearAttachmentUrl: finalUrl == null,
+    );
 
-    // Optimistic update
     final idx = _logs.indexWhere((l) => l.id == log.id);
     if (idx >= 0) {
       _logs = List.from(_logs)..[idx] = saved;
@@ -64,18 +72,17 @@ class AppState extends ChangeNotifier {
     }
     notifyListeners();
 
-    await FirestoreService.saveLog(uid, docId, saved);
+    await FirestoreService.saveLog(docId, saved, isNew: isNew);
   }
 
   Future<void> deleteLog(LogEntry log) async {
-    final uid = AuthService.uid!;
     _logs = _logs.where((l) => l.id != log.id).toList();
     notifyListeners();
 
     if (log.firestoreId != null) {
-      await FirestoreService.deleteLog(uid, log.firestoreId!);
-      for (final img in log.images) {
-        if (StorageService.isRemote(img)) StorageService.deleteImage(img);
+      await FirestoreService.deleteLog(log.firestoreId!);
+      if (log.attachmentUrl != null) {
+        StorageService.deleteAttachment(log.attachmentUrl!);
       }
     }
   }
@@ -87,12 +94,12 @@ class AppState extends ChangeNotifier {
   }
 
   String buildCsv() {
-    final rows = ['Date,Type,Odometer (km),Cost,Notes'];
+    final rows = ['Date,Type,Odometer (km),Cost (THB),Description'];
     for (final l in _logs) {
       final t = logTypeById(l.type).label;
-      final note = l.note.replaceAll(',', ';').replaceAll('\n', ' ');
+      final desc = l.description.replaceAll(',', ';').replaceAll('\n', ' ');
       final d = '${l.date.year}-${l.date.month.toString().padLeft(2, '0')}-${l.date.day.toString().padLeft(2, '0')}';
-      rows.add('$d,$t,${l.odometer},${l.cost.toStringAsFixed(2)},"$note"');
+      rows.add('$d,$t,${l.odometer},${l.cost.toStringAsFixed(2)},"$desc"');
     }
     return rows.join('\n');
   }
