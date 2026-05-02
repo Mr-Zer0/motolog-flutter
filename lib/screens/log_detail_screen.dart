@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../app_colors.dart';
 import '../models.dart';
+import '../widgets/image_uploader.dart';
 import 'log_form_screen.dart';
 
 class LogDetailScreen extends StatefulWidget {
@@ -21,14 +21,6 @@ class _LogDetailScreenState extends State<LogDetailScreen> {
   void initState() {
     super.initState();
     _log = widget.log;
-  }
-
-  Widget _buildImage(String path, {double? width, double? height}) {
-    const fit = BoxFit.cover;
-    if (path.startsWith('http')) {
-      return Image.network(path, width: width, height: height, fit: fit);
-    }
-    return Image.file(File(path), width: width, height: height, fit: fit);
   }
 
   @override
@@ -150,7 +142,7 @@ class _LogDetailScreenState extends State<LogDetailScreen> {
                     const SizedBox(height: 10),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: _buildImage(_log.attachmentUrl!, width: double.infinity, height: 200),
+                      child: ImageUploader._buildImage(_log.attachmentUrl!, width: double.infinity, height: 200),
                     ),
                   ],
                 ],

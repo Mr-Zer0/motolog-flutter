@@ -31,6 +31,9 @@ class ImageUploader extends StatelessWidget {
   static Widget _buildImage(String path, {double? width, double? height}) {
     const fit = BoxFit.cover;
     if (path.startsWith('http')) {
+      if (!path.contains('firebasestorage')) {
+        return Container(width: width, height: height, color: const Color(0xFFE0D8CF));
+      }
       return Image.network(path, width: width, height: height, fit: fit);
     }
     return Image.file(File(path), width: width, height: height, fit: fit);

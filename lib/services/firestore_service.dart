@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../models.dart';
+
+final _dateFormat = DateFormat('yyyy-MM-dd');
 
 class FirestoreService {
   static final _db = FirebaseFirestore.instance;
@@ -38,9 +41,7 @@ class FirestoreService {
       'plate_number': bike.plate,
       'vin': bike.vin,
       'current_odometer': bike.currentOdometer,
-      'buying_date': bike.buyingDate != null
-          ? '${bike.buyingDate!.year}-${bike.buyingDate!.month.toString().padLeft(2, '0')}-${bike.buyingDate!.day.toString().padLeft(2, '0')}'
-          : null,
+      'buying_date': bike.buyingDate != null ? _dateFormat.format(bike.buyingDate!) : null,
     }, SetOptions(merge: true));
   }
 
@@ -74,7 +75,7 @@ class FirestoreService {
     final data = <String, dynamic>{
       'type': log.type,
       'title': log.title,
-      'date': '${log.date.year}-${log.date.month.toString().padLeft(2, '0')}-${log.date.day.toString().padLeft(2, '0')}',
+      'date': _dateFormat.format(log.date),
       'odometer': log.odometer > 0 ? log.odometer : null,
       'cost': log.cost > 0 ? log.cost : null,
       'description': log.description.isNotEmpty ? log.description : null,

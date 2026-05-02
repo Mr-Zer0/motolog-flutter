@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import 'models.dart';
+
+final _dateFormat = DateFormat('yyyy-MM-dd');
 import 'services/firestore_service.dart';
 import 'services/storage_service.dart';
 
@@ -43,7 +46,6 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // attachmentPending: local file path to upload, remote URL to keep, or null for no attachment
   Future<void> saveLog(LogEntry log, String? attachmentPending) async {
     final docId = log.firestoreId ?? FirestoreService.newLogRef.id;
     final isNew = log.firestoreId == null;
@@ -94,13 +96,21 @@ class AppState extends ChangeNotifier {
   }
 
   String buildCsv() {
-    final rows = ['Date,Type,Odometer (km),Cost (THB),Description'];
+    final rows = ['Date,Type,Odometer (km),Cost (THB),Title,Description'];
     for (final l in _logs) {
       final t = logTypeById(l.type).label;
-      final desc = l.description.replaceAll(',', ';').replaceAll('\n', ' ');
-      final d = '${l.date.year}-${l.date.month.toString().padLeft(2, '0')}-${l.date.day.toString().padLeft(2, '0')}';
-      rows.add('$d,$t,${l.odometer},${l.cost.toStringAsFixed(2)},"$desc"');
+      final title = _csvCell(l.title);
+      final desc = _csvCell(l.description);
+      final d = _dateFormat.format(l.date);
+      rows.add('$d,$t,${l.odometer},${l.cost.toStringAsFixed(2)},"$title","$desc"');
     }
     return rows.join('\n');
+  }
+
+  static String _csvCell(String value) {
+    var v = value.replaceAll('"', '""').replaceAll('\n', ' ');
+    // Neutralise formula injection (Excel/Sheets execute cells starting with = + @ - |)
+    if (v.isNotEmpty && '=+@-|'.contains(v[0])) v = "'$v";
+    return v;
   }
 }
