@@ -1,0 +1,25 @@
+name: motolog
+description: A motorbike activity logging app.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  google_fonts: ^6.2.1
+  provider: ^6.1.2
+  image_picker: ^1.1.2
+  intl: ^0.20.2
+  share_plus: ^10.1.4
+  path_provider: ^2.1.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
