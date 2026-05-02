@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1033649417268",
+    "project_id": "motolog-c87ac",
+    "storage_bucket": "motolog-c87ac.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1033649417268:android:4f822f858537b83c2eae61",
+        "android_client_info": {
+          "package_name": "com.motolog.motolog"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1033649417268-hugarmhd5sripucb31umq4350ofkbe1s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.motolog.motolog",
+            "certificate_hash": "45affcceafabea42bf87a0f6009e334d4b1a4988"
+          }
+        },
+        {
+          "client_id": "1033649417268-931t15nsj3tgm13b4r03jjhcf5rg88p7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAgnG7ROoNb-3qjh8VFAOb81ouWSjPKQZ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1033649417268-931t15nsj3tgm13b4r03jjhcf5rg88p7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
