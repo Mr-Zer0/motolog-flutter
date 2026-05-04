@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1033649417268-hcvn22ikissb4o6u4elk5is3srs7fdea.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.motolog.motolog",
+            "certificate_hash": "dc91b6ae9b446f9c0bf45d7c890513ad9c9e5022"
+          }
+        },
+        {
           "client_id": "1033649417268-hugarmhd5sripucb31umq4350ofkbe1s.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
