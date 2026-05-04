@@ -142,7 +142,7 @@ class _LogDetailScreenState extends State<LogDetailScreen> {
                     const SizedBox(height: 10),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: ImageUploader._buildImage(_log.attachmentUrl!, width: double.infinity, height: 200),
+                      child: ImageUploader.buildImage(_log.attachmentUrl!, width: double.infinity, height: 200),
                     ),
                   ],
                 ],

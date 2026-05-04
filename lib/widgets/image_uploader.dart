@@ -28,7 +28,7 @@ class ImageUploader extends StatelessWidget {
     );
   }
 
-  static Widget _buildImage(String path, {double? width, double? height}) {
+  static Widget buildImage(String path, {double? width, double? height}) {
     const fit = BoxFit.cover;
     if (path.startsWith('http')) {
       if (!path.contains('firebasestorage')) {
@@ -53,7 +53,7 @@ class ImageUploader extends StatelessWidget {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: _buildImage(attachment!, width: 80, height: 80),
+                    child: buildImage(attachment!, width: 80, height: 80),
                   ),
                   Positioned(
                     top: 4,
@@ -115,7 +115,7 @@ class _FullscreenImage extends StatelessWidget {
         children: [
           Center(
             child: InteractiveViewer(
-              child: ImageUploader._buildImage(path),
+              child: ImageUploader.buildImage(path),
             ),
           ),
           Positioned(

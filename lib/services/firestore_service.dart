@@ -8,8 +8,8 @@ class FirestoreService {
   static final _db = FirebaseFirestore.instance;
 
   // ── Bike ── bike/default
-  static Future<Bike?> fetchBike() async {
-    final doc = await _db.doc('bike/default').get();
+  static Future<Bike?> fetchBike({Source source = Source.serverAndCache}) async {
+    final doc = await _db.doc('bike/default').get(GetOptions(source: source));
     if (!doc.exists) return null;
     final d = doc.data()!;
     return Bike(
@@ -51,8 +51,8 @@ class FirestoreService {
 
   static DocumentReference<Map<String, dynamic>> get newLogRef => _logsRef.doc();
 
-  static Future<List<LogEntry>> fetchLogs() async {
-    final snap = await _logsRef.orderBy('date', descending: true).get();
+  static Future<List<LogEntry>> fetchLogs({Source source = Source.serverAndCache}) async {
+    final snap = await _logsRef.orderBy('date', descending: true).get(GetOptions(source: source));
     return snap.docs.map(_docToLog).toList();
   }
 

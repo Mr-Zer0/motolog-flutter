@@ -1,15 +1,19 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'models.dart';
-
-final _dateFormat = DateFormat('yyyy-MM-dd');
 import 'services/firestore_service.dart';
 import 'services/storage_service.dart';
+
+final _dateFormat = DateFormat('yyyy-MM-dd');
 
 class AppState extends ChangeNotifier {
   List<LogEntry> _logs = [];
   Bike _bike = const Bike(name: '', year: '', plate: '', color: '');
   bool _loading = true;
+  DateTime? _lastServerSync;
+
+  static const _serverSyncTtl = Duration(minutes: 30);
 
   List<LogEntry> get logs => List.unmodifiable(_logs);
   Bike get bike => _bike;
@@ -23,19 +27,26 @@ class AppState extends ChangeNotifier {
     return _logs.where((l) => l.type == typeFilter).toList();
   }
 
-  Future<void> load() async {
+  Future<void> load({bool forceSync = false}) async {
     _loading = true;
     notifyListeners();
 
+    final needsSync = forceSync ||
+        _lastServerSync == null ||
+        DateTime.now().difference(_lastServerSync!) > _serverSyncTtl;
+
+    final source = needsSync ? Source.serverAndCache : Source.cache;
+
     final results = await Future.wait([
-      FirestoreService.fetchBike(),
-      FirestoreService.fetchLogs(),
+      FirestoreService.fetchBike(source: source),
+      FirestoreService.fetchLogs(source: source),
     ]);
 
     _bike = (results[0] as Bike?) ??
         const Bike(name: 'My Bike', year: '', plate: '', color: '');
     _logs = results[1] as List<LogEntry>;
     _loading = false;
+    if (needsSync) _lastServerSync = DateTime.now();
     notifyListeners();
   }
 
